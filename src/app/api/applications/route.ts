@@ -46,6 +46,10 @@ export async function POST(request: NextRequest) {
   if (!/^0\d{8,9}$/.test(phone)) {
     return NextResponse.json({ error: "หมายเลขโทรศัพท์ไม่ถูกต้อง" }, { status: 400 });
   }
+  const email = str(fd, "email");
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return NextResponse.json({ error: "รูปแบบอีเมลไม่ถูกต้อง" }, { status: 400 });
+  }
   if (!paymentAmount || Number(paymentAmount) <= 0) {
     return NextResponse.json({ error: "กรุณาระบุจำนวนเงินที่โอน" }, { status: 400 });
   }
@@ -105,7 +109,7 @@ export async function POST(request: NextRequest) {
       national_id, has_disability, disability_detail, nationality,
       scholarship_type, scholarship_detail, scholarship_amount, loan_type,
       registration_type, registration_detail, payment_method, payment_amount,
-      prefix, full_name, full_name_en, birth_date, phone,
+      prefix, full_name, full_name_en, birth_date, phone, email,
       education_level, school_name, school_province, dorm_needed,
       id_card_file_path, payment_slip_file_path, pdpa_accepted_at
     ) VALUES (
@@ -114,9 +118,9 @@ export async function POST(request: NextRequest) {
       $12,$13,$14,$15,
       $16,$17,$18,$19,
       $20,$21,$22,$23,
-      $24,$25,$26,$27,$28,
-      $29,$30,$31,$32,
-      $33,$34, now()
+      $24,$25,$26,$27,$28,$29,
+      $30,$31,$32,$33,
+      $34,$35, now()
     )`,
     [
       str(fd, "semester") || null,
@@ -147,6 +151,7 @@ export async function POST(request: NextRequest) {
       str(fd, "fullNameEn") || null,
       dateOrNull(str(fd, "birthDate")),
       phone,
+      email || null,
       str(fd, "educationLevel") || null,
       str(fd, "schoolName") || null,
       str(fd, "schoolProvince") || null,

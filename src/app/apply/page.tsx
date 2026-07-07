@@ -128,6 +128,7 @@ export default function ApplyPage() {
     fullNameEn: "",
     birthDate: "",
     phone: "",
+    email: "",
     educationLevel: "",
     educationLevelOther: "",
     schoolName: "",
@@ -237,6 +238,10 @@ export default function ApplyPage() {
       setError("หมายเลขโทรศัพท์มือถือไม่ถูกต้อง");
       return;
     }
+    if (form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+      setError("รูปแบบอีเมลไม่ถูกต้อง");
+      return;
+    }
     if (!form.campus || !form.entryType || !form.studentType) {
       setError("กรุณากรอกข้อมูลหลักสูตรและการเข้าเรียนให้ครบถ้วน");
       return;
@@ -319,6 +324,7 @@ export default function ApplyPage() {
       fd.append("fullNameEn", form.fullNameEn);
       fd.append("birthDate", form.birthDate);
       fd.append("phone", form.phone);
+      fd.append("email", form.email.trim());
       fd.append(
         "educationLevel",
         form.educationLevel === "อื่นๆ" ? form.educationLevelOther.trim() : form.educationLevel
@@ -482,6 +488,15 @@ export default function ApplyPage() {
           </Field>
           <Field label="เบอร์มือถือ" required>
             <input className={inputCls} placeholder="0812345678" value={form.phone} onChange={(e) => update("phone", e.target.value)} />
+          </Field>
+          <Field label="อีเมล">
+            <input
+              type="email"
+              className={inputCls}
+              placeholder="example@email.com"
+              value={form.email}
+              onChange={(e) => update("email", e.target.value)}
+            />
           </Field>
         </Section>
 

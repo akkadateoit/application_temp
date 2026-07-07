@@ -58,6 +58,7 @@ CREATE TABLE IF NOT EXISTS applications (
   full_name_en             VARCHAR(200),
   birth_date               DATE,
   phone                    VARCHAR(20),
+  email                    VARCHAR(200),
 
   -- education
   education_level          VARCHAR(50),  -- ม.6 / ปวช. / ปวส.

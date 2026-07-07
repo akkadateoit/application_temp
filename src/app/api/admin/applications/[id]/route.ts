@@ -40,6 +40,7 @@ const EDITABLE_COLUMNS = new Set([
   "full_name_en",
   "birth_date",
   "phone",
+  "email",
   "education_level",
   "school_name",
   "school_province",

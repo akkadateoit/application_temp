@@ -368,6 +368,10 @@ export default function AdminApplicationDetailPage({
             <span className={captionCls}>เบอร์มือถือ</span>
             <input className={inputCls} value={str("phone")} onChange={(e) => set("phone", e.target.value)} />
           </label>
+          <label className={labelCls}>
+            <span className={captionCls}>อีเมล</span>
+            <input type="email" className={inputCls} value={str("email")} onChange={(e) => set("email", e.target.value)} />
+          </label>
         </section>
 
         <section className="bg-white rounded-xl border border-slate-200 p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">

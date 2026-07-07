@@ -21,6 +21,7 @@ type Row = {
 const statusColor: Record<string, string> = {
   pending: "bg-amber-50 text-amber-700 border-amber-200",
   approved: "bg-green-50 text-green-700 border-green-200",
+  registered: "bg-blue-50 text-blue-700 border-blue-200",
   rejected: "bg-red-50 text-red-700 border-red-200",
   cancelled: "bg-slate-100 text-slate-600 border-slate-300",
 };
@@ -30,7 +31,7 @@ export default function AdminApplicationsPage() {
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState("pending");
   const [loading, setLoading] = useState(true);
   const pageSize = 20;
 
