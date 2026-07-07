@@ -265,7 +265,7 @@ export default function ApplyPage() {
       <form onSubmit={handleSubmit} className="mx-auto max-w-3xl space-y-5">
         <div className="text-center mb-2">
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
-            ใบสมัครเรียนระดับปริญญาตรี (ฉบับย่อ)
+            ใบรับสมัครนักศึกษาออนไลน์
           </h1>
           <p className="text-slate-500 mt-1">มหาวิทยาลัยนอร์ทกรุงเทพ</p>
         </div>
