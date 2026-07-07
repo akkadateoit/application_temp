@@ -36,6 +36,15 @@ yarn-error.log*
 # vercel
 .vercel
 
+# uploaded applicant files (contain PII, never commit) — keep the folder structure only
+/uploads/id-cards/*
+/uploads/slips/*
+!/uploads/id-cards/.gitkeep
+!/uploads/slips/.gitkeep
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local Claude Code settings
+/.claude/settings.local.json

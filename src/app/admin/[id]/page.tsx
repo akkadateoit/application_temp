@@ -1,0 +1,358 @@
+"use client";
+
+import { useEffect, useState, use as usePromise } from "react";
+import AdminNav from "@/components/AdminNav";
+import {
+  PROGRAM_OPTIONS,
+  SECTION_OPTIONS,
+  CAMPUS_OPTIONS,
+  ENTRY_TYPE_OPTIONS,
+  STUDENT_TYPE_OPTIONS,
+  LOAN_TYPE_OPTIONS,
+  REGISTRATION_TYPE_OPTIONS,
+  PREFIX_OPTIONS,
+  EDUCATION_LEVEL_OPTIONS,
+  STATUS_OPTIONS,
+} from "@/lib/formOptions";
+
+type Application = Record<string, unknown> & {
+  id: number;
+  national_id: string;
+  full_name: string;
+  status: string;
+};
+
+const inputCls =
+  "rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full";
+const labelCls = "flex flex-col gap-1 text-sm";
+const captionCls = "font-medium text-slate-700";
+
+function toDateInput(value: unknown): string {
+  if (!value) return "";
+  const d = new Date(value as string);
+  if (Number.isNaN(d.getTime())) return "";
+  return d.toISOString().slice(0, 10);
+}
+
+export default function AdminApplicationDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = usePromise(params);
+  const [app, setApp] = useState<Application | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/admin/applications/${id}`)
+      .then((r) => r.json())
+      .then((data) => setApp(data.application))
+      .finally(() => setLoading(false));
+  }, [id]);
+
+  function set(key: string, value: unknown) {
+    setApp((a) => (a ? { ...a, [key]: value } : a));
+  }
+
+  async function handleSave() {
+    if (!app) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/applications/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(app),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error ?? "บันทึกไม่สำเร็จ");
+        return;
+      }
+      setApp(data.application);
+      setSavedAt(Date.now());
+    } catch {
+      setError("เกิดข้อผิดพลาดในการเชื่อมต่อ");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (loading) {
+    return (
+      <>
+        <AdminNav />
+        <main className="flex-1 flex items-center justify-center text-slate-400">
+          กำลังโหลด...
+        </main>
+      </>
+    );
+  }
+
+  if (!app) {
+    return (
+      <>
+        <AdminNav />
+        <main className="flex-1 flex items-center justify-center text-slate-400">
+          ไม่พบใบสมัคร
+        </main>
+      </>
+    );
+  }
+
+  const str = (key: string) => (app[key] as string) ?? "";
+
+  return (
+    <>
+      <AdminNav />
+      <main className="flex-1 mx-auto w-full max-w-4xl px-4 py-6 space-y-5">
+        <div className="flex items-center justify-between">
+          <h1 className="text-lg font-semibold text-slate-900">
+            ใบสมัคร #{app.id} — {app.full_name}
+          </h1>
+          <a
+            href={`/status`}
+            className="text-sm text-blue-600 hover:underline"
+          >
+            เลขบัตรประชาชน: {app.national_id}
+          </a>
+        </div>
+
+        <section className="bg-white rounded-xl border border-slate-200 p-5 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <label className={labelCls}>
+            <span className={captionCls}>สถานะ</span>
+            <select className={inputCls} value={str("status")} onChange={(e) => set("status", e.target.value)}>
+              {STATUS_OPTIONS.map((s) => (
+                <option key={s.value} value={s.value}>
+                  {s.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>เลขที่ใบสมัคร</span>
+            <input className={inputCls} value={str("application_no")} onChange={(e) => set("application_no", e.target.value)} />
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>ทีม</span>
+            <input className={inputCls} value={str("team_no")} onChange={(e) => set("team_no", e.target.value)} />
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>รหัสนักศึกษา</span>
+            <input className={inputCls} value={str("student_code")} onChange={(e) => set("student_code", e.target.value)} />
+          </label>
+          <label className={labelCls + " sm:col-span-2"}>
+            <span className={captionCls}>หมายเหตุจากเจ้าหน้าที่ (ผู้สมัครจะเห็นข้อความนี้)</span>
+            <textarea
+              className={inputCls}
+              rows={2}
+              value={str("admin_note")}
+              onChange={(e) => set("admin_note", e.target.value)}
+            />
+          </label>
+        </section>
+
+        <section className="bg-white rounded-xl border border-slate-200 p-5 space-y-3">
+          <h2 className="font-semibold text-slate-900">เอกสารแนบ</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm text-slate-500 mb-1">รูปบัตรประจำตัวประชาชน</p>
+              <img
+                src={`/api/admin/files/${id}/id-card`}
+                alt="บัตรประจำตัวประชาชน"
+                className="rounded-lg border border-slate-200 max-h-64 object-contain"
+              />
+            </div>
+            <div>
+              <p className="text-sm text-slate-500 mb-1">สลิปโอนเงิน</p>
+              <img
+                src={`/api/admin/files/${id}/slip`}
+                alt="สลิปโอนเงิน"
+                className="rounded-lg border border-slate-200 max-h-64 object-contain"
+              />
+            </div>
+          </div>
+        </section>
+
+        <section className="bg-white rounded-xl border border-slate-200 p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <h2 className="font-semibold text-slate-900 sm:col-span-2">ข้อมูลการสมัคร</h2>
+          <label className={labelCls}>
+            <span className={captionCls}>ภาคเรียนที่เข้าศึกษา</span>
+            <input className={inputCls} value={str("semester")} onChange={(e) => set("semester", e.target.value)} />
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>หลักสูตร</span>
+            <select className={inputCls} value={str("program")} onChange={(e) => set("program", e.target.value)}>
+              <option value="">-</option>
+              {PROGRAM_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>ภาค</span>
+            <select className={inputCls} value={str("section")} onChange={(e) => set("section", e.target.value)}>
+              <option value="">-</option>
+              {SECTION_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>วิทยาเขต</span>
+            <select className={inputCls} value={str("campus")} onChange={(e) => set("campus", e.target.value)}>
+              <option value="">-</option>
+              {CAMPUS_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>สาขาวิชา</span>
+            <input className={inputCls} value={str("major")} onChange={(e) => set("major", e.target.value)} />
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>คณะ</span>
+            <input className={inputCls} value={str("faculty")} onChange={(e) => set("faculty", e.target.value)} />
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>ประเภทการเข้าเรียน</span>
+            <select className={inputCls} value={str("entry_type")} onChange={(e) => set("entry_type", e.target.value)}>
+              <option value="">-</option>
+              {ENTRY_TYPE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>ประเภทนักศึกษา</span>
+            <select className={inputCls} value={str("student_type")} onChange={(e) => set("student_type", e.target.value)}>
+              <option value="">-</option>
+              {STUDENT_TYPE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </label>
+        </section>
+
+        <section className="bg-white rounded-xl border border-slate-200 p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <h2 className="font-semibold text-slate-900 sm:col-span-2">ข้อมูลส่วนตัว</h2>
+          <label className={labelCls}>
+            <span className={captionCls}>คำนำหน้า</span>
+            <select className={inputCls} value={str("prefix")} onChange={(e) => set("prefix", e.target.value)}>
+              <option value="">-</option>
+              {PREFIX_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>ชื่อ-นามสกุล</span>
+            <input className={inputCls} value={str("full_name")} onChange={(e) => set("full_name", e.target.value)} />
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>วันเดือนปีเกิด</span>
+            <input type="date" className={inputCls} value={toDateInput(app.birth_date)} onChange={(e) => set("birth_date", e.target.value)} />
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>เบอร์มือถือ</span>
+            <input className={inputCls} value={str("phone")} onChange={(e) => set("phone", e.target.value)} />
+          </label>
+        </section>
+
+        <section className="bg-white rounded-xl border border-slate-200 p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <h2 className="font-semibold text-slate-900 sm:col-span-2">บัตรประจำตัวประชาชน</h2>
+          <label className={labelCls}>
+            <span className={captionCls}>วันที่ออกบัตร</span>
+            <input type="date" className={inputCls} value={toDateInput(app.id_card_issue_date)} onChange={(e) => set("id_card_issue_date", e.target.value)} />
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>วันที่บัตรหมดอายุ</span>
+            <input type="date" className={inputCls} value={toDateInput(app.id_card_expiry_date)} onChange={(e) => set("id_card_expiry_date", e.target.value)} />
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>เชื้อชาติ</span>
+            <input className={inputCls} value={str("ethnicity")} onChange={(e) => set("ethnicity", e.target.value)} />
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>สัญชาติ</span>
+            <input className={inputCls} value={str("nationality")} onChange={(e) => set("nationality", e.target.value)} />
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>ศาสนา</span>
+            <input className={inputCls} value={str("religion")} onChange={(e) => set("religion", e.target.value)} />
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>ผู้พิการ</span>
+            <input className={inputCls} placeholder="รายละเอียด (ถ้ามี)" value={str("disability_detail")} onChange={(e) => set("disability_detail", e.target.value)} />
+          </label>
+        </section>
+
+        <section className="bg-white rounded-xl border border-slate-200 p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <h2 className="font-semibold text-slate-900 sm:col-span-2">ทุน / การชำระเงิน</h2>
+          <label className={labelCls}>
+            <span className={captionCls}>ประเภททุนการศึกษา</span>
+            <input className={inputCls} value={str("scholarship_type")} onChange={(e) => set("scholarship_type", e.target.value)} />
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>มูลค่าทุน</span>
+            <input type="number" className={inputCls} value={str("scholarship_amount")} onChange={(e) => set("scholarship_amount", e.target.value)} />
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>ทุนกู้ยืม</span>
+            <select className={inputCls} value={str("loan_type")} onChange={(e) => set("loan_type", e.target.value)}>
+              <option value="">-</option>
+              {LOAN_TYPE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>การขึ้นทะเบียน</span>
+            <select className={inputCls} value={str("registration_type")} onChange={(e) => set("registration_type", e.target.value)}>
+              <option value="">-</option>
+              {REGISTRATION_TYPE_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>จำนวนเงินที่โอน (บาท)</span>
+            <input type="number" className={inputCls} value={str("payment_amount")} onChange={(e) => set("payment_amount", e.target.value)} />
+          </label>
+        </section>
+
+        <section className="bg-white rounded-xl border border-slate-200 p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <h2 className="font-semibold text-slate-900 sm:col-span-2">วุฒิการศึกษา / ที่พัก</h2>
+          <label className={labelCls}>
+            <span className={captionCls}>วุฒิการศึกษาสูงสุด</span>
+            <select className={inputCls} value={str("education_level")} onChange={(e) => set("education_level", e.target.value)}>
+              <option value="">-</option>
+              {EDUCATION_LEVEL_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>โรงเรียน/วิทยาลัย</span>
+            <input className={inputCls} value={str("school_name")} onChange={(e) => set("school_name", e.target.value)} />
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>จังหวัด</span>
+            <input className={inputCls} value={str("school_province")} onChange={(e) => set("school_province", e.target.value)} />
+          </label>
+          <label className="flex items-center gap-2 text-sm mt-6">
+            <input
+              type="checkbox"
+              checked={Boolean(app.dorm_needed)}
+              onChange={(e) => set("dorm_needed", e.target.checked)}
+            />
+            ต้องการอยู่หอพักมหาวิทยาลัย
+          </label>
+        </section>
+
+        {error && (
+          <div className="rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm px-4 py-3">
+            {error}
+          </div>
+        )}
+
+        <div className="flex items-center gap-3 sticky bottom-4">
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="rounded-lg bg-blue-600 px-6 py-3 text-white font-medium hover:bg-blue-700 disabled:bg-slate-300 shadow-lg"
+          >
+            {saving ? "กำลังบันทึก..." : "บันทึกการแก้ไข"}
+          </button>
+          {savedAt && <span className="text-sm text-green-600">บันทึกแล้ว</span>}
+        </div>
+      </main>
+    </>
+  );
+}
