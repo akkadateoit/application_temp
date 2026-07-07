@@ -22,6 +22,7 @@ const statusColor: Record<string, string> = {
   pending: "bg-amber-50 text-amber-700 border-amber-200",
   approved: "bg-green-50 text-green-700 border-green-200",
   rejected: "bg-red-50 text-red-700 border-red-200",
+  cancelled: "bg-slate-100 text-slate-600 border-slate-300",
 };
 
 export default function AdminApplicationsPage() {
@@ -59,9 +60,29 @@ export default function AdminApplicationsPage() {
       <main className="flex-1 mx-auto w-full max-w-6xl px-4 py-6">
         <h1 className="text-lg font-semibold text-slate-900 mb-4">รายการใบสมัคร</h1>
 
-        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+        <div className="flex gap-1 mb-4 border-b border-slate-200 overflow-x-auto">
+          {[{ value: "", label: "ทั้งหมด" }, ...STATUS_OPTIONS].map((tab) => (
+            <button
+              key={tab.value || "all"}
+              type="button"
+              onClick={() => {
+                setPage(1);
+                setStatus(tab.value);
+              }}
+              className={`shrink-0 px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                status === tab.value
+                  ? "border-blue-600 text-blue-600"
+                  : "border-transparent text-slate-500 hover:text-slate-800"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="mb-4">
           <input
-            className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
             placeholder="ค้นหาชื่อ หรือเลขบัตรประชาชน"
             value={search}
             onChange={(e) => {
@@ -69,21 +90,6 @@ export default function AdminApplicationsPage() {
               setSearch(e.target.value);
             }}
           />
-          <select
-            className="rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            value={status}
-            onChange={(e) => {
-              setPage(1);
-              setStatus(e.target.value);
-            }}
-          >
-            <option value="">ทุกสถานะ</option>
-            {STATUS_OPTIONS.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </select>
         </div>
 
         <div className="bg-white rounded-xl border border-slate-200 overflow-x-auto">

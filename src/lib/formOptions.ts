@@ -12,6 +12,7 @@ export const STATUS_OPTIONS = [
   { value: "pending", label: "รอตรวจสอบ" },
   { value: "approved", label: "อนุมัติ" },
   { value: "rejected", label: "ไม่อนุมัติ" },
+  { value: "cancelled", label: "ยกเลิก" },
 ] as const;
 
 export function statusLabel(status: string): string {
