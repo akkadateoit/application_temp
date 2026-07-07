@@ -22,6 +22,7 @@ import {
   getPlans,
 } from "@/lib/courses";
 import SearchSelect from "@/components/SearchSelect";
+import ImageLightbox from "@/components/ImageLightbox";
 import { SEMESTER_TERM_OPTIONS, getAcademicYearOptions } from "@/lib/academicYear";
 
 type Application = Record<string, unknown> & {
@@ -55,6 +56,7 @@ export default function AdminApplicationDetailPage({
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [schoolNameManual, setSchoolNameManual] = useState(false);
+  const [lightbox, setLightbox] = useState<{ src: string; alt: string } | null>(null);
 
   useEffect(() => {
     fetch(`/api/admin/applications/${id}`)
@@ -189,7 +191,10 @@ export default function AdminApplicationDetailPage({
               <img
                 src={`/api/admin/files/${id}/id-card`}
                 alt="บัตรประจำตัวประชาชน"
-                className="rounded-lg border border-slate-200 max-h-64 object-contain"
+                className="rounded-lg border border-slate-200 max-h-64 object-contain cursor-zoom-in hover:opacity-90 transition-opacity"
+                onClick={() =>
+                  setLightbox({ src: `/api/admin/files/${id}/id-card`, alt: "บัตรประจำตัวประชาชน" })
+                }
               />
             </div>
             <div>
@@ -197,7 +202,8 @@ export default function AdminApplicationDetailPage({
               <img
                 src={`/api/admin/files/${id}/slip`}
                 alt="สลิปโอนเงิน"
-                className="rounded-lg border border-slate-200 max-h-64 object-contain"
+                className="rounded-lg border border-slate-200 max-h-64 object-contain cursor-zoom-in hover:opacity-90 transition-opacity"
+                onClick={() => setLightbox({ src: `/api/admin/files/${id}/slip`, alt: "สลิปโอนเงิน" })}
               />
             </div>
           </div>
@@ -543,6 +549,9 @@ export default function AdminApplicationDetailPage({
           {savedAt && <span className="text-sm text-green-600">บันทึกแล้ว</span>}
         </div>
       </main>
+      {lightbox && (
+        <ImageLightbox src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />
+      )}
     </>
   );
 }
