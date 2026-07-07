@@ -19,12 +19,14 @@ CREATE TABLE IF NOT EXISTS applications (
   -- form: top section
   application_date       DATE NOT NULL DEFAULT CURRENT_DATE,
   semester               VARCHAR(50),
-  program                VARCHAR(50),   -- 4 ปี / 2 ปี เทียบโอน
-  section                VARCHAR(50),   -- ปกติ / สมทบ
+  program                VARCHAR(50),   -- จำนวนปี จาก course.csv (เดิม 4 ปี / 2 ปี เทียบโอน)
+  section                VARCHAR(50),   -- ช่วงเวลา จาก course.csv (ปกติ / สมทบ)
   campus                 VARCHAR(50),   -- สะพานใหม่ / รังสิต / นนทบุรี
   program_level          VARCHAR(100),  -- ระดับ จาก course.csv (ปริญญาตรี, ปริญญาโท, ...)
   major                  VARCHAR(200),
   faculty                VARCHAR(200),
+  curriculum_type        VARCHAR(100),  -- ประเภทหลักสูตร จาก course.csv (หลักสูตรไทย/หลักสูตรนานาชาติ)
+  study_plan             VARCHAR(100),  -- แผนการเรียน จาก course.csv (ปกติ/สหกิจ/แผน 2.1/...)
   entry_type             VARCHAR(100),  -- ไม่มี/มีรายวิชาเทียบโอนต่างสถาบัน
   student_type           VARCHAR(50),   -- ปกติ / ศักยภาพ
 

@@ -3,8 +3,6 @@
 import { useEffect, useState, use as usePromise } from "react";
 import AdminNav from "@/components/AdminNav";
 import {
-  PROGRAM_OPTIONS,
-  SECTION_OPTIONS,
   CAMPUS_OPTIONS,
   ENTRY_TYPE_OPTIONS,
   STUDENT_TYPE_OPTIONS,
@@ -14,7 +12,15 @@ import {
   EDUCATION_LEVEL_OPTIONS,
   STATUS_OPTIONS,
 } from "@/lib/formOptions";
-import { getLevels, getFaculties, getMajors } from "@/lib/courses";
+import {
+  getLevels,
+  getFaculties,
+  getMajors,
+  getYears,
+  getSections,
+  getCurriculumTypes,
+  getPlans,
+} from "@/lib/courses";
 
 type Application = Record<string, unknown> & {
   id: number;
@@ -185,20 +191,6 @@ export default function AdminApplicationDetailPage({
             <input className={inputCls} value={str("semester")} onChange={(e) => set("semester", e.target.value)} />
           </label>
           <label className={labelCls}>
-            <span className={captionCls}>หลักสูตร</span>
-            <select className={inputCls} value={str("program")} onChange={(e) => set("program", e.target.value)}>
-              <option value="">-</option>
-              {PROGRAM_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-            </select>
-          </label>
-          <label className={labelCls}>
-            <span className={captionCls}>ภาค</span>
-            <select className={inputCls} value={str("section")} onChange={(e) => set("section", e.target.value)}>
-              <option value="">-</option>
-              {SECTION_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
-            </select>
-          </label>
-          <label className={labelCls}>
             <span className={captionCls}>วิทยาเขต</span>
             <select className={inputCls} value={str("campus")} onChange={(e) => set("campus", e.target.value)}>
               <option value="">-</option>
@@ -234,10 +226,87 @@ export default function AdminApplicationDetailPage({
               className={inputCls}
               value={str("major")}
               disabled={!str("faculty")}
-              onChange={(e) => set("major", e.target.value)}
+              onChange={(e) =>
+                setApp((a) =>
+                  a
+                    ? { ...a, major: e.target.value, program: "", section: "", curriculum_type: "", study_plan: "" }
+                    : a
+                )
+              }
             >
               <option value="">-</option>
               {getMajors(str("program_level"), str("faculty")).map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>จำนวนปี</span>
+            <select
+              className={inputCls}
+              value={str("program")}
+              disabled={!str("major")}
+              onChange={(e) =>
+                setApp((a) =>
+                  a ? { ...a, program: e.target.value, section: "", curriculum_type: "", study_plan: "" } : a
+                )
+              }
+            >
+              <option value="">-</option>
+              {getYears(str("program_level"), str("faculty"), str("major")).map((o) => (
+                <option key={o} value={o}>{o} ปี</option>
+              ))}
+            </select>
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>ช่วงเวลา</span>
+            <select
+              className={inputCls}
+              value={str("section")}
+              disabled={!str("program")}
+              onChange={(e) =>
+                setApp((a) => (a ? { ...a, section: e.target.value, curriculum_type: "", study_plan: "" } : a))
+              }
+            >
+              <option value="">-</option>
+              {getSections(str("program_level"), str("faculty"), str("major"), str("program")).map((o) => (
+                <option key={o} value={o}>{o}</option>
+              ))}
+            </select>
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>ประเภทหลักสูตร</span>
+            <select
+              className={inputCls}
+              value={str("curriculum_type")}
+              disabled={!str("section")}
+              onChange={(e) => setApp((a) => (a ? { ...a, curriculum_type: e.target.value, study_plan: "" } : a))}
+            >
+              <option value="">-</option>
+              {getCurriculumTypes(str("program_level"), str("faculty"), str("major"), str("program"), str("section")).map(
+                (o) => (
+                  <option key={o} value={o}>{o}</option>
+                )
+              )}
+            </select>
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>แผนการเรียน</span>
+            <select
+              className={inputCls}
+              value={str("study_plan")}
+              disabled={!str("curriculum_type")}
+              onChange={(e) => set("study_plan", e.target.value)}
+            >
+              <option value="">-</option>
+              {getPlans(
+                str("program_level"),
+                str("faculty"),
+                str("major"),
+                str("program"),
+                str("section"),
+                str("curriculum_type")
+              ).map((o) => (
+                <option key={o} value={o}>{o}</option>
+              ))}
             </select>
           </label>
           <label className={labelCls}>

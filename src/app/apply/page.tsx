@@ -4,8 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { isValidThaiNationalId } from "@/lib/thaiId";
 import {
-  PROGRAM_OPTIONS,
-  SECTION_OPTIONS,
   CAMPUS_OPTIONS,
   ENTRY_TYPE_OPTIONS,
   STUDENT_TYPE_OPTIONS,
@@ -14,7 +12,16 @@ import {
   PREFIX_OPTIONS,
   EDUCATION_LEVEL_OPTIONS,
 } from "@/lib/formOptions";
-import { getLevels, getFaculties, getMajors, isValidCourseSelection } from "@/lib/courses";
+import {
+  getLevels,
+  getFaculties,
+  getMajors,
+  getYears,
+  getSections,
+  getCurriculumTypes,
+  getPlans,
+  isValidFullCourseSelection,
+} from "@/lib/courses";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -94,12 +101,14 @@ export default function ApplyPage() {
 
   const [form, setForm] = useState({
     semester: "",
-    program: "",
-    section: "",
     campus: "",
     programLevel: "",
     faculty: "",
     major: "",
+    program: "",
+    section: "",
+    curriculumType: "",
+    studyPlan: "",
     entryType: "",
     studentType: "",
     nationalId: "",
@@ -141,11 +150,44 @@ export default function ApplyPage() {
   }
 
   function selectLevel(level: string) {
-    setForm((f) => ({ ...f, programLevel: level, faculty: "", major: "" }));
+    setForm((f) => ({
+      ...f,
+      programLevel: level,
+      faculty: "",
+      major: "",
+      program: "",
+      section: "",
+      curriculumType: "",
+      studyPlan: "",
+    }));
   }
 
   function selectFaculty(faculty: string) {
-    setForm((f) => ({ ...f, faculty, major: "" }));
+    setForm((f) => ({
+      ...f,
+      faculty,
+      major: "",
+      program: "",
+      section: "",
+      curriculumType: "",
+      studyPlan: "",
+    }));
+  }
+
+  function selectMajor(major: string) {
+    setForm((f) => ({ ...f, major, program: "", section: "", curriculumType: "", studyPlan: "" }));
+  }
+
+  function selectYears(years: string) {
+    setForm((f) => ({ ...f, program: years, section: "", curriculumType: "", studyPlan: "" }));
+  }
+
+  function selectSection(section: string) {
+    setForm((f) => ({ ...f, section, curriculumType: "", studyPlan: "" }));
+  }
+
+  function selectCurriculumType(curriculumType: string) {
+    setForm((f) => ({ ...f, curriculumType, studyPlan: "" }));
   }
 
   function validateFile(file: File | undefined, label: string): string | null {
@@ -171,12 +213,22 @@ export default function ApplyPage() {
       setError("หมายเลขโทรศัพท์มือถือไม่ถูกต้อง");
       return;
     }
-    if (!form.program || !form.section || !form.campus || !form.entryType || !form.studentType) {
+    if (!form.campus || !form.entryType || !form.studentType) {
       setError("กรุณากรอกข้อมูลหลักสูตรและการเข้าเรียนให้ครบถ้วน");
       return;
     }
-    if (!isValidCourseSelection(form.programLevel, form.faculty, form.major)) {
-      setError("กรุณาเลือกระดับ คณะ และสาขาวิชาให้ครบถ้วนและถูกต้อง");
+    if (
+      !isValidFullCourseSelection({
+        level: form.programLevel,
+        faculty: form.faculty,
+        major: form.major,
+        years: form.program,
+        section: form.section,
+        curriculumType: form.curriculumType,
+        plan: form.studyPlan,
+      })
+    ) {
+      setError("กรุณาเลือกระดับ คณะ สาขาวิชา จำนวนปี ช่วงเวลา ประเภทหลักสูตร และแผนการเรียนให้ครบถ้วนและถูกต้อง");
       return;
     }
     if (!form.prefix || !form.fullName || !form.birthDate) {
@@ -219,6 +271,8 @@ export default function ApplyPage() {
       fd.append("programLevel", form.programLevel);
       fd.append("major", form.major);
       fd.append("faculty", form.faculty);
+      fd.append("curriculumType", form.curriculumType);
+      fd.append("studyPlan", form.studyPlan);
       fd.append("entryType", form.entryType);
       fd.append("studentType", form.studentType);
       fd.append("nationalId", form.nationalId);
@@ -279,12 +333,6 @@ export default function ApplyPage() {
               onChange={(e) => update("semester", e.target.value)}
             />
           </Field>
-          <Field label="หลักสูตรปริญญาตรี" full required>
-            <RadioGroup name="program" options={PROGRAM_OPTIONS} value={form.program} onChange={(v) => update("program", v)} />
-          </Field>
-          <Field label="ภาค" full required>
-            <RadioGroup name="section" options={SECTION_OPTIONS} value={form.section} onChange={(v) => update("section", v)} />
-          </Field>
           <Field label="วิทยาเขต" full required>
             <RadioGroup name="campus" options={CAMPUS_OPTIONS} value={form.campus} onChange={(v) => update("campus", v)} />
           </Field>
@@ -321,6 +369,62 @@ export default function ApplyPage() {
               <option value="">-- เลือกสาขาวิชา --</option>
               {getMajors(form.programLevel, form.faculty).map((major) => (
                 <option key={major} value={major}>{major}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="จำนวนปี" required>
+            <select
+              aria-label="จำนวนปี"
+              className={inputCls}
+              value={form.program}
+              disabled={!form.major}
+              onChange={(e) => selectYears(e.target.value)}
+            >
+              <option value="">-- เลือกจำนวนปี --</option>
+              {getYears(form.programLevel, form.faculty, form.major).map((years) => (
+                <option key={years} value={years}>{years} ปี</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="ช่วงเวลา" required>
+            <select
+              aria-label="ช่วงเวลา"
+              className={inputCls}
+              value={form.section}
+              disabled={!form.program}
+              onChange={(e) => selectSection(e.target.value)}
+            >
+              <option value="">-- เลือกช่วงเวลา --</option>
+              {getSections(form.programLevel, form.faculty, form.major, form.program).map((section) => (
+                <option key={section} value={section}>{section}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="ประเภทหลักสูตร" required>
+            <select
+              aria-label="ประเภทหลักสูตร"
+              className={inputCls}
+              value={form.curriculumType}
+              disabled={!form.section}
+              onChange={(e) => selectCurriculumType(e.target.value)}
+            >
+              <option value="">-- เลือกประเภทหลักสูตร --</option>
+              {getCurriculumTypes(form.programLevel, form.faculty, form.major, form.program, form.section).map((type) => (
+                <option key={type} value={type}>{type}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="แผนการเรียน" required>
+            <select
+              aria-label="แผนการเรียน"
+              className={inputCls}
+              value={form.studyPlan}
+              disabled={!form.curriculumType}
+              onChange={(e) => update("studyPlan", e.target.value)}
+            >
+              <option value="">-- เลือกแผนการเรียน --</option>
+              {getPlans(form.programLevel, form.faculty, form.major, form.program, form.section, form.curriculumType).map((plan) => (
+                <option key={plan} value={plan}>{plan}</option>
               ))}
             </select>
           </Field>

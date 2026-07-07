@@ -16,6 +16,8 @@ const EDITABLE_COLUMNS = new Set([
   "program_level",
   "major",
   "faculty",
+  "curriculum_type",
+  "study_plan",
   "entry_type",
   "student_type",
   "has_disability",

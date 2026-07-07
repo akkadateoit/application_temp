@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { isValidThaiNationalId } from "@/lib/thaiId";
 import { saveUploadedFile, UploadValidationError } from "@/lib/upload";
-import { isValidCourseSelection } from "@/lib/courses";
+import { isValidFullCourseSelection } from "@/lib/courses";
 
 export const runtime = "nodejs";
 
@@ -49,9 +49,19 @@ export async function POST(request: NextRequest) {
   if (!paymentAmount || Number(paymentAmount) <= 0) {
     return NextResponse.json({ error: "กรุณาระบุจำนวนเงินที่โอน" }, { status: 400 });
   }
-  if (!isValidCourseSelection(str(fd, "programLevel"), str(fd, "faculty"), str(fd, "major"))) {
+  if (
+    !isValidFullCourseSelection({
+      level: str(fd, "programLevel"),
+      faculty: str(fd, "faculty"),
+      major: str(fd, "major"),
+      years: str(fd, "program"),
+      section: str(fd, "section"),
+      curriculumType: str(fd, "curriculumType"),
+      plan: str(fd, "studyPlan"),
+    })
+  ) {
     return NextResponse.json(
-      { error: "กรุณาเลือกระดับ คณะ และสาขาวิชาให้ครบถ้วนและถูกต้อง" },
+      { error: "กรุณาเลือกระดับ คณะ สาขาวิชา จำนวนปี ช่วงเวลา ประเภทหลักสูตร และแผนการเรียนให้ครบถ้วนและถูกต้อง" },
       { status: 400 }
     );
   }
@@ -90,7 +100,8 @@ export async function POST(request: NextRequest) {
 
   await pool.query(
     `INSERT INTO applications (
-      semester, program, section, campus, program_level, major, faculty, entry_type, student_type,
+      semester, program, section, campus, program_level, major, faculty,
+      curriculum_type, study_plan, entry_type, student_type,
       national_id, has_disability, disability_detail, nationality,
       scholarship_type, scholarship_detail, scholarship_amount, loan_type,
       registration_type, registration_detail, payment_method, payment_amount,
@@ -98,13 +109,14 @@ export async function POST(request: NextRequest) {
       education_level, school_name, school_province, dorm_needed,
       id_card_file_path, payment_slip_file_path, pdpa_accepted_at
     ) VALUES (
-      $1,$2,$3,$4,$5,$6,$7,$8,$9,
-      $10,$11,$12,$13,
-      $14,$15,$16,$17,
-      $18,$19,$20,$21,
-      $22,$23,$24,$25,$26,
-      $27,$28,$29,$30,
-      $31,$32, now()
+      $1,$2,$3,$4,$5,$6,$7,
+      $8,$9,$10,$11,
+      $12,$13,$14,$15,
+      $16,$17,$18,$19,
+      $20,$21,$22,$23,
+      $24,$25,$26,$27,$28,
+      $29,$30,$31,$32,
+      $33,$34, now()
     )`,
     [
       str(fd, "semester") || null,
@@ -114,6 +126,8 @@ export async function POST(request: NextRequest) {
       str(fd, "programLevel") || null,
       str(fd, "major") || null,
       str(fd, "faculty") || null,
+      str(fd, "curriculumType") || null,
+      str(fd, "studyPlan") || null,
       str(fd, "entryType") || null,
       str(fd, "studentType") || null,
       nationalId,

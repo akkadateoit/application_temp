@@ -13,6 +13,8 @@ type ApplicationSummary = {
   program_level: string | null;
   major: string | null;
   faculty: string | null;
+  curriculum_type: string | null;
+  study_plan: string | null;
   prefix: string | null;
   full_name: string;
   full_name_en: string | null;
@@ -112,11 +114,17 @@ export default function StatusPage() {
               <dd className="col-span-2 text-slate-900">{result.application_no ?? "-"}</dd>
               <dt className="text-slate-500 col-span-1">รหัสนักศึกษา</dt>
               <dd className="col-span-2 text-slate-900">{result.student_code ?? "-"}</dd>
-              <dt className="text-slate-500 col-span-1">หลักสูตร</dt>
-              <dd className="col-span-2 text-slate-900">{result.program ?? "-"}</dd>
+              <dt className="text-slate-500 col-span-1">ระดับ</dt>
+              <dd className="col-span-2 text-slate-900">{result.program_level ?? "-"}</dd>
               <dt className="text-slate-500 col-span-1">สาขา/คณะ</dt>
               <dd className="col-span-2 text-slate-900">
                 {result.major || "-"} / {result.faculty || "-"}
+              </dd>
+              <dt className="text-slate-500 col-span-1">หลักสูตร</dt>
+              <dd className="col-span-2 text-slate-900">
+                {result.program ? `${result.program} ปี` : "-"} {result.section ? `(${result.section})` : ""}
+                {result.curriculum_type ? ` / ${result.curriculum_type}` : ""}
+                {result.study_plan ? ` / ${result.study_plan}` : ""}
               </dd>
               <dt className="text-slate-500 col-span-1">วิทยาเขต</dt>
               <dd className="col-span-2 text-slate-900">{result.campus ?? "-"}</dd>

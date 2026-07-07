@@ -1,5 +1,3 @@
-export const PROGRAM_OPTIONS = ["4 ปี", "2 ปี เทียบโอน"] as const;
-export const SECTION_OPTIONS = ["ปกติ", "สมทบ"] as const;
 export const CAMPUS_OPTIONS = ["สะพานใหม่", "รังสิต", "นนทบุรี"] as const;
 export const ENTRY_TYPE_OPTIONS = [
   "ไม่มีรายวิชาเทียบโอนต่างสถาบัน",
