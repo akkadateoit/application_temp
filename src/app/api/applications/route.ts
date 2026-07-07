@@ -30,7 +30,12 @@ export async function POST(request: NextRequest) {
   }
 
   const nationalId = str(fd, "nationalId");
-  const fullName = str(fd, "fullName");
+  const firstName = str(fd, "firstName");
+  const lastName = str(fd, "lastName");
+  const firstNameEn = str(fd, "firstNameEn");
+  const lastNameEn = str(fd, "lastNameEn");
+  const fullName = `${firstName} ${lastName}`.trim();
+  const fullNameEn = `${firstNameEn} ${lastNameEn}`.trim();
   const phone = str(fd, "phone");
   const paymentAmount = str(fd, "paymentAmount");
 
@@ -40,8 +45,8 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
-  if (!fullName) {
-    return NextResponse.json({ error: "กรุณากรอกชื่อ-นามสกุล" }, { status: 400 });
+  if (!firstName || !lastName) {
+    return NextResponse.json({ error: "กรุณากรอกชื่อและนามสกุล" }, { status: 400 });
   }
   if (!/^0\d{8,9}$/.test(phone)) {
     return NextResponse.json({ error: "หมายเลขโทรศัพท์ไม่ถูกต้อง" }, { status: 400 });
@@ -109,7 +114,8 @@ export async function POST(request: NextRequest) {
       national_id, has_disability, disability_detail, nationality,
       scholarship_type, scholarship_detail, scholarship_amount, loan_type,
       registration_type, registration_detail, payment_method, payment_amount,
-      prefix, full_name, full_name_en, birth_date, phone, email,
+      prefix, first_name, last_name, first_name_en, last_name_en,
+      full_name, full_name_en, birth_date, phone, email,
       education_level, school_name, school_province, dorm_needed,
       id_card_file_path, payment_slip_file_path, pdpa_accepted_at
     ) VALUES (
@@ -118,9 +124,10 @@ export async function POST(request: NextRequest) {
       $12,$13,$14,$15,
       $16,$17,$18,$19,
       $20,$21,$22,$23,
-      $24,$25,$26,$27,$28,$29,
-      $30,$31,$32,$33,
-      $34,$35, now()
+      $24,$25,$26,$27,$28,
+      $29,$30,$31,$32,$33,
+      $34,$35,$36,$37,
+      $38,$39, now()
     )`,
     [
       str(fd, "semester") || null,
@@ -147,8 +154,12 @@ export async function POST(request: NextRequest) {
       "โอนเงิน",
       numOrNull(paymentAmount),
       str(fd, "prefix") || null,
+      firstName,
+      lastName,
+      firstNameEn || null,
+      lastNameEn || null,
       fullName,
-      str(fd, "fullNameEn") || null,
+      fullNameEn || null,
       dateOrNull(str(fd, "birthDate")),
       phone,
       email || null,

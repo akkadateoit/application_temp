@@ -22,6 +22,7 @@ import {
   getPlans,
 } from "@/lib/courses";
 import SearchSelect from "@/components/SearchSelect";
+import { SEMESTER_TERM_OPTIONS, getAcademicYearOptions } from "@/lib/academicYear";
 
 type Application = Record<string, unknown> & {
   id: number;
@@ -205,8 +206,32 @@ export default function AdminApplicationDetailPage({
         <section className="bg-white rounded-xl border border-slate-200 p-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <h2 className="font-semibold text-slate-900 sm:col-span-2">ข้อมูลการสมัคร</h2>
           <label className={labelCls}>
-            <span className={captionCls}>ภาคเรียนที่เข้าศึกษา</span>
-            <input className={inputCls} value={str("semester")} onChange={(e) => set("semester", e.target.value)} />
+            <span className={captionCls}>เทอมที่เข้าศึกษา</span>
+            <select
+              className={inputCls}
+              value={str("semester").split("/")[0] ?? ""}
+              onChange={(e) => set("semester", `${e.target.value}/${str("semester").split("/")[1] ?? ""}`)}
+            >
+              <option value="">-</option>
+              {SEMESTER_TERM_OPTIONS.map((term) => (
+                <option key={term} value={term}>เทอม {term}</option>
+              ))}
+            </select>
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>ปีการศึกษา</span>
+            <select
+              className={inputCls}
+              value={str("semester").split("/")[1] ?? ""}
+              onChange={(e) => set("semester", `${str("semester").split("/")[0] ?? ""}/${e.target.value}`)}
+            >
+              <option value="">-</option>
+              {Array.from(
+                new Set([...getAcademicYearOptions().map(String), str("semester").split("/")[1]].filter(Boolean))
+              ).map((year) => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
           </label>
           <label className={labelCls}>
             <span className={captionCls}>วิทยาเขต</span>
@@ -353,12 +378,20 @@ export default function AdminApplicationDetailPage({
             </select>
           </label>
           <label className={labelCls}>
-            <span className={captionCls}>ชื่อ-นามสกุล</span>
-            <input className={inputCls} value={str("full_name")} onChange={(e) => set("full_name", e.target.value)} />
+            <span className={captionCls}>ชื่อ (ภาษาไทย)</span>
+            <input className={inputCls} value={str("first_name")} onChange={(e) => set("first_name", e.target.value)} />
           </label>
           <label className={labelCls}>
-            <span className={captionCls}>ชื่อ-นามสกุล (ภาษาอังกฤษ)</span>
-            <input className={inputCls} value={str("full_name_en")} onChange={(e) => set("full_name_en", e.target.value)} />
+            <span className={captionCls}>นามสกุล (ภาษาไทย)</span>
+            <input className={inputCls} value={str("last_name")} onChange={(e) => set("last_name", e.target.value)} />
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>First Name (English)</span>
+            <input className={inputCls} value={str("first_name_en")} onChange={(e) => set("first_name_en", e.target.value)} />
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>Last Name (English)</span>
+            <input className={inputCls} value={str("last_name_en")} onChange={(e) => set("last_name_en", e.target.value)} />
           </label>
           <label className={labelCls}>
             <span className={captionCls}>วันเดือนปีเกิด</span>

@@ -36,8 +36,10 @@ const EDITABLE_COLUMNS = new Set([
   "payment_method",
   "payment_amount",
   "prefix",
-  "full_name",
-  "full_name_en",
+  "first_name",
+  "last_name",
+  "first_name_en",
+  "last_name_en",
   "birth_date",
   "phone",
   "email",
@@ -78,6 +80,19 @@ export async function PUT(
     if (!(column in body)) continue;
     values.push(body[column] === "" ? null : body[column]);
     setClauses.push(`${column} = $${values.length}`);
+  }
+
+  // full_name / full_name_en are derived, not directly editable, so they stay
+  // in sync whenever the admin's whole-object PUT includes the name parts.
+  if ("first_name" in body || "last_name" in body) {
+    const fullName = `${body.first_name ?? ""} ${body.last_name ?? ""}`.trim();
+    values.push(fullName);
+    setClauses.push(`full_name = $${values.length}`);
+  }
+  if ("first_name_en" in body || "last_name_en" in body) {
+    const fullNameEn = `${body.first_name_en ?? ""} ${body.last_name_en ?? ""}`.trim();
+    values.push(fullNameEn || null);
+    setClauses.push(`full_name_en = $${values.length}`);
   }
 
   if (setClauses.length === 0) {

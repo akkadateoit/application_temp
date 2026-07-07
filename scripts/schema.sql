@@ -54,8 +54,12 @@ CREATE TABLE IF NOT EXISTS applications (
 
   -- personal info
   prefix                   VARCHAR(20),  -- นาย/นาง/นางสาว
-  full_name                VARCHAR(200) NOT NULL,
-  full_name_en             VARCHAR(200),
+  first_name               VARCHAR(100),
+  last_name                VARCHAR(100),
+  first_name_en            VARCHAR(100),
+  last_name_en             VARCHAR(100),
+  full_name                VARCHAR(200) NOT NULL, -- derived: first_name + last_name
+  full_name_en             VARCHAR(200),          -- derived: first_name_en + last_name_en
   birth_date               DATE,
   phone                    VARCHAR(20),
   email                    VARCHAR(200),

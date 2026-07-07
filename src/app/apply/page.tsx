@@ -23,6 +23,7 @@ import {
   isValidFullCourseSelection,
 } from "@/lib/courses";
 import SearchSelect from "@/components/SearchSelect";
+import { SEMESTER_TERM_OPTIONS, getAcademicYearOptions } from "@/lib/academicYear";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -101,7 +102,8 @@ export default function ApplyPage() {
   const slipInputRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState({
-    semester: "",
+    semesterTerm: "",
+    semesterYear: "",
     campus: "",
     programLevel: "",
     faculty: "",
@@ -124,8 +126,10 @@ export default function ApplyPage() {
     registrationDetail: "",
     paymentAmount: "",
     prefix: "",
-    fullName: "",
-    fullNameEn: "",
+    firstName: "",
+    lastName: "",
+    firstNameEn: "",
+    lastNameEn: "",
     birthDate: "",
     phone: "",
     email: "",
@@ -242,7 +246,7 @@ export default function ApplyPage() {
       setError("รูปแบบอีเมลไม่ถูกต้อง");
       return;
     }
-    if (!form.campus || !form.entryType || !form.studentType) {
+    if (!form.semesterTerm || !form.semesterYear || !form.campus || !form.entryType || !form.studentType) {
       setError("กรุณากรอกข้อมูลหลักสูตรและการเข้าเรียนให้ครบถ้วน");
       return;
     }
@@ -260,7 +264,7 @@ export default function ApplyPage() {
       setError("กรุณาเลือกระดับ คณะ สาขาวิชา จำนวนปี ช่วงเวลา ประเภทหลักสูตร และแผนการเรียนให้ครบถ้วนและถูกต้อง");
       return;
     }
-    if (!form.prefix || !form.fullName || !form.birthDate) {
+    if (!form.prefix || !form.firstName.trim() || !form.lastName.trim() || !form.birthDate) {
       setError("กรุณากรอกข้อมูลส่วนตัวให้ครบถ้วน");
       return;
     }
@@ -297,7 +301,7 @@ export default function ApplyPage() {
     setSubmitting(true);
     try {
       const fd = new FormData();
-      fd.append("semester", form.semester);
+      fd.append("semester", `${form.semesterTerm}/${form.semesterYear}`);
       fd.append("program", form.program);
       fd.append("section", form.section);
       fd.append("campus", form.campus);
@@ -320,8 +324,10 @@ export default function ApplyPage() {
       fd.append("registrationDetail", form.registrationDetail);
       fd.append("paymentAmount", form.paymentAmount);
       fd.append("prefix", form.prefix);
-      fd.append("fullName", form.fullName);
-      fd.append("fullNameEn", form.fullNameEn);
+      fd.append("firstName", form.firstName.trim());
+      fd.append("lastName", form.lastName.trim());
+      fd.append("firstNameEn", form.firstNameEn.trim());
+      fd.append("lastNameEn", form.lastNameEn.trim());
       fd.append("birthDate", form.birthDate);
       fd.append("phone", form.phone);
       fd.append("email", form.email.trim());
@@ -362,13 +368,31 @@ export default function ApplyPage() {
         </div>
 
         <Section title="ข้อมูลการสมัคร">
-          <Field label="ภาคเรียนที่เข้าศึกษา" full>
-            <input
+          <Field label="เทอมที่เข้าศึกษา" required>
+            <select
+              aria-label="เทอมที่เข้าศึกษา"
               className={inputCls}
-              placeholder="เช่น 1/2569"
-              value={form.semester}
-              onChange={(e) => update("semester", e.target.value)}
-            />
+              value={form.semesterTerm}
+              onChange={(e) => update("semesterTerm", e.target.value)}
+            >
+              <option value="">-- เลือกเทอม --</option>
+              {SEMESTER_TERM_OPTIONS.map((term) => (
+                <option key={term} value={term}>เทอม {term}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="ปีการศึกษา" required>
+            <select
+              aria-label="ปีการศึกษา"
+              className={inputCls}
+              value={form.semesterYear}
+              onChange={(e) => update("semesterYear", e.target.value)}
+            >
+              <option value="">-- เลือกปีการศึกษา --</option>
+              {getAcademicYearOptions().map((year) => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
           </Field>
           <Field label="วิทยาเขต" full required>
             <RadioGroup name="campus" options={CAMPUS_OPTIONS} value={form.campus} onChange={(v) => update("campus", v)} />
@@ -477,11 +501,17 @@ export default function ApplyPage() {
           <Field label="คำนำหน้า" required>
             <RadioGroup name="prefix" options={PREFIX_OPTIONS} value={form.prefix} onChange={(v) => update("prefix", v)} />
           </Field>
-          <Field label="ชื่อ-นามสกุล" required>
-            <input className={inputCls} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
+          <Field label="ชื่อ (ภาษาไทย)" required>
+            <input className={inputCls} value={form.firstName} onChange={(e) => update("firstName", e.target.value)} />
           </Field>
-          <Field label="ชื่อ-นามสกุล (ภาษาอังกฤษ)">
-            <input className={inputCls} value={form.fullNameEn} onChange={(e) => update("fullNameEn", e.target.value)} />
+          <Field label="นามสกุล (ภาษาไทย)" required>
+            <input className={inputCls} value={form.lastName} onChange={(e) => update("lastName", e.target.value)} />
+          </Field>
+          <Field label="First Name (English)">
+            <input className={inputCls} value={form.firstNameEn} onChange={(e) => update("firstNameEn", e.target.value)} />
+          </Field>
+          <Field label="Last Name (English)">
+            <input className={inputCls} value={form.lastNameEn} onChange={(e) => update("lastNameEn", e.target.value)} />
           </Field>
           <Field label="วันเดือนปีเกิด" required>
             <input type="date" className={inputCls} value={form.birthDate} onChange={(e) => update("birthDate", e.target.value)} />
