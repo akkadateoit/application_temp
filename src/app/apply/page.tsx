@@ -14,6 +14,7 @@ import {
   PREFIX_OPTIONS,
   EDUCATION_LEVEL_OPTIONS,
 } from "@/lib/formOptions";
+import { getLevels, getFaculties, getMajors, isValidCourseSelection } from "@/lib/courses";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -96,18 +97,15 @@ export default function ApplyPage() {
     program: "",
     section: "",
     campus: "",
-    major: "",
+    programLevel: "",
     faculty: "",
+    major: "",
     entryType: "",
     studentType: "",
     nationalId: "",
     hasDisability: false,
     disabilityDetail: "",
-    idCardIssueDate: "",
-    idCardExpiryDate: "",
-    ethnicity: "ไทย",
     nationality: "ไทย",
-    religion: "พุทธ",
     scholarshipType: "",
     scholarshipDetail: "",
     scholarshipAmount: "",
@@ -117,6 +115,7 @@ export default function ApplyPage() {
     paymentAmount: "",
     prefix: "",
     fullName: "",
+    fullNameEn: "",
     birthDate: "",
     phone: "",
     educationLevel: "",
@@ -131,7 +130,7 @@ export default function ApplyPage() {
       .split("; ")
       .some((c) => c.startsWith("pdpa_accepted=1"));
     if (!hasPdpa) {
-      router.replace("/");
+      router.replace("/pdpa");
       return;
     }
     setCheckedPdpa(true);
@@ -139,6 +138,14 @@ export default function ApplyPage() {
 
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  function selectLevel(level: string) {
+    setForm((f) => ({ ...f, programLevel: level, faculty: "", major: "" }));
+  }
+
+  function selectFaculty(faculty: string) {
+    setForm((f) => ({ ...f, faculty, major: "" }));
   }
 
   function validateFile(file: File | undefined, label: string): string | null {
@@ -166,6 +173,10 @@ export default function ApplyPage() {
     }
     if (!form.program || !form.section || !form.campus || !form.entryType || !form.studentType) {
       setError("กรุณากรอกข้อมูลหลักสูตรและการเข้าเรียนให้ครบถ้วน");
+      return;
+    }
+    if (!isValidCourseSelection(form.programLevel, form.faculty, form.major)) {
+      setError("กรุณาเลือกระดับ คณะ และสาขาวิชาให้ครบถ้วนและถูกต้อง");
       return;
     }
     if (!form.prefix || !form.fullName || !form.birthDate) {
@@ -205,6 +216,7 @@ export default function ApplyPage() {
       fd.append("program", form.program);
       fd.append("section", form.section);
       fd.append("campus", form.campus);
+      fd.append("programLevel", form.programLevel);
       fd.append("major", form.major);
       fd.append("faculty", form.faculty);
       fd.append("entryType", form.entryType);
@@ -212,11 +224,7 @@ export default function ApplyPage() {
       fd.append("nationalId", form.nationalId);
       fd.append("hasDisability", String(form.hasDisability));
       fd.append("disabilityDetail", form.disabilityDetail);
-      fd.append("idCardIssueDate", form.idCardIssueDate);
-      fd.append("idCardExpiryDate", form.idCardExpiryDate);
-      fd.append("ethnicity", form.ethnicity);
       fd.append("nationality", form.nationality);
-      fd.append("religion", form.religion);
       fd.append("scholarshipType", form.scholarshipType);
       fd.append("scholarshipDetail", form.scholarshipDetail);
       fd.append("scholarshipAmount", form.scholarshipAmount);
@@ -226,6 +234,7 @@ export default function ApplyPage() {
       fd.append("paymentAmount", form.paymentAmount);
       fd.append("prefix", form.prefix);
       fd.append("fullName", form.fullName);
+      fd.append("fullNameEn", form.fullNameEn);
       fd.append("birthDate", form.birthDate);
       fd.append("phone", form.phone);
       fd.append("educationLevel", form.educationLevel);
@@ -279,11 +288,41 @@ export default function ApplyPage() {
           <Field label="วิทยาเขต" full required>
             <RadioGroup name="campus" options={CAMPUS_OPTIONS} value={form.campus} onChange={(v) => update("campus", v)} />
           </Field>
-          <Field label="สาขาวิชา">
-            <input className={inputCls} value={form.major} onChange={(e) => update("major", e.target.value)} />
+          <Field label="ระดับ" required>
+            <select aria-label="ระดับ" className={inputCls} value={form.programLevel} onChange={(e) => selectLevel(e.target.value)}>
+              <option value="">-- เลือกระดับ --</option>
+              {getLevels().map((level) => (
+                <option key={level} value={level}>{level}</option>
+              ))}
+            </select>
           </Field>
-          <Field label="คณะ">
-            <input className={inputCls} value={form.faculty} onChange={(e) => update("faculty", e.target.value)} />
+          <Field label="คณะ" required>
+            <select
+              aria-label="คณะ"
+              className={inputCls}
+              value={form.faculty}
+              disabled={!form.programLevel}
+              onChange={(e) => selectFaculty(e.target.value)}
+            >
+              <option value="">-- เลือกคณะ --</option>
+              {getFaculties(form.programLevel).map((faculty) => (
+                <option key={faculty} value={faculty}>{faculty}</option>
+              ))}
+            </select>
+          </Field>
+          <Field label="สาขาวิชา" full required>
+            <select
+              aria-label="สาขาวิชา"
+              className={inputCls}
+              value={form.major}
+              disabled={!form.faculty}
+              onChange={(e) => update("major", e.target.value)}
+            >
+              <option value="">-- เลือกสาขาวิชา --</option>
+              {getMajors(form.programLevel, form.faculty).map((major) => (
+                <option key={major} value={major}>{major}</option>
+              ))}
+            </select>
           </Field>
           <Field label="ประเภทการเข้าเรียน" full required>
             <RadioGroup name="entryType" options={ENTRY_TYPE_OPTIONS} value={form.entryType} onChange={(v) => update("entryType", v)} />
@@ -299,6 +338,9 @@ export default function ApplyPage() {
           </Field>
           <Field label="ชื่อ-นามสกุล" required>
             <input className={inputCls} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
+          </Field>
+          <Field label="ชื่อ-นามสกุล (ภาษาอังกฤษ)">
+            <input className={inputCls} value={form.fullNameEn} onChange={(e) => update("fullNameEn", e.target.value)} />
           </Field>
           <Field label="วันเดือนปีเกิด" required>
             <input type="date" className={inputCls} value={form.birthDate} onChange={(e) => update("birthDate", e.target.value)} />
@@ -319,20 +361,8 @@ export default function ApplyPage() {
               onChange={(e) => update("nationalId", e.target.value.replace(/\D/g, ""))}
             />
           </Field>
-          <Field label="วันที่ออกบัตร">
-            <input type="date" className={inputCls} value={form.idCardIssueDate} onChange={(e) => update("idCardIssueDate", e.target.value)} />
-          </Field>
-          <Field label="วันที่บัตรหมดอายุ">
-            <input type="date" className={inputCls} value={form.idCardExpiryDate} onChange={(e) => update("idCardExpiryDate", e.target.value)} />
-          </Field>
-          <Field label="เชื้อชาติ">
-            <input className={inputCls} value={form.ethnicity} onChange={(e) => update("ethnicity", e.target.value)} />
-          </Field>
           <Field label="สัญชาติ">
             <input className={inputCls} value={form.nationality} onChange={(e) => update("nationality", e.target.value)} />
-          </Field>
-          <Field label="ศาสนา">
-            <input className={inputCls} value={form.religion} onChange={(e) => update("religion", e.target.value)} />
           </Field>
           <Field label="เป็นผู้พิการ" full>
             <div className="flex items-center gap-4">

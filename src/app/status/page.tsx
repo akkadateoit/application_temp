@@ -10,10 +10,12 @@ type ApplicationSummary = {
   program: string | null;
   section: string | null;
   campus: string | null;
+  program_level: string | null;
   major: string | null;
   faculty: string | null;
   prefix: string | null;
   full_name: string;
+  full_name_en: string | null;
   status: string;
   admin_note: string | null;
   created_at: string;
@@ -102,6 +104,9 @@ export default function StatusPage() {
               <dt className="text-slate-500 col-span-1">ชื่อ-นามสกุล</dt>
               <dd className="col-span-2 text-slate-900">
                 {result.prefix} {result.full_name}
+                {result.full_name_en && (
+                  <span className="block text-slate-500 text-xs">{result.full_name_en}</span>
+                )}
               </dd>
               <dt className="text-slate-500 col-span-1">เลขที่ใบสมัคร</dt>
               <dd className="col-span-2 text-slate-900">{result.application_no ?? "-"}</dd>

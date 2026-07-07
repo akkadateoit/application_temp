@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { pool } from "@/lib/db";
 import { isValidThaiNationalId } from "@/lib/thaiId";
 import { saveUploadedFile, UploadValidationError } from "@/lib/upload";
+import { isValidCourseSelection } from "@/lib/courses";
 
 export const runtime = "nodejs";
 
@@ -48,6 +49,12 @@ export async function POST(request: NextRequest) {
   if (!paymentAmount || Number(paymentAmount) <= 0) {
     return NextResponse.json({ error: "กรุณาระบุจำนวนเงินที่โอน" }, { status: 400 });
   }
+  if (!isValidCourseSelection(str(fd, "programLevel"), str(fd, "faculty"), str(fd, "major"))) {
+    return NextResponse.json(
+      { error: "กรุณาเลือกระดับ คณะ และสาขาวิชาให้ครบถ้วนและถูกต้อง" },
+      { status: 400 }
+    );
+  }
 
   const idCardFile = fd.get("idCardFile");
   const paymentSlipFile = fd.get("paymentSlipFile");
@@ -83,29 +90,28 @@ export async function POST(request: NextRequest) {
 
   await pool.query(
     `INSERT INTO applications (
-      semester, program, section, campus, major, faculty, entry_type, student_type,
-      national_id, has_disability, disability_detail, id_card_issue_date, id_card_expiry_date,
-      ethnicity, nationality, religion,
+      semester, program, section, campus, program_level, major, faculty, entry_type, student_type,
+      national_id, has_disability, disability_detail, nationality,
       scholarship_type, scholarship_detail, scholarship_amount, loan_type,
       registration_type, registration_detail, payment_method, payment_amount,
-      prefix, full_name, birth_date, phone,
+      prefix, full_name, full_name_en, birth_date, phone,
       education_level, school_name, school_province, dorm_needed,
       id_card_file_path, payment_slip_file_path, pdpa_accepted_at
     ) VALUES (
-      $1,$2,$3,$4,$5,$6,$7,$8,
-      $9,$10,$11,$12,$13,
-      $14,$15,$16,
-      $17,$18,$19,$20,
-      $21,$22,$23,$24,
-      $25,$26,$27,$28,
-      $29,$30,$31,$32,
-      $33,$34, now()
+      $1,$2,$3,$4,$5,$6,$7,$8,$9,
+      $10,$11,$12,$13,
+      $14,$15,$16,$17,
+      $18,$19,$20,$21,
+      $22,$23,$24,$25,$26,
+      $27,$28,$29,$30,
+      $31,$32, now()
     )`,
     [
       str(fd, "semester") || null,
       str(fd, "program") || null,
       str(fd, "section") || null,
       str(fd, "campus") || null,
+      str(fd, "programLevel") || null,
       str(fd, "major") || null,
       str(fd, "faculty") || null,
       str(fd, "entryType") || null,
@@ -113,11 +119,7 @@ export async function POST(request: NextRequest) {
       nationalId,
       str(fd, "hasDisability") === "true",
       str(fd, "disabilityDetail") || null,
-      dateOrNull(str(fd, "idCardIssueDate")),
-      dateOrNull(str(fd, "idCardExpiryDate")),
-      str(fd, "ethnicity") || null,
       str(fd, "nationality") || null,
-      str(fd, "religion") || null,
       str(fd, "scholarshipType") || null,
       str(fd, "scholarshipDetail") || null,
       numOrNull(str(fd, "scholarshipAmount")),
@@ -128,6 +130,7 @@ export async function POST(request: NextRequest) {
       numOrNull(paymentAmount),
       str(fd, "prefix") || null,
       fullName,
+      str(fd, "fullNameEn") || null,
       dateOrNull(str(fd, "birthDate")),
       phone,
       str(fd, "educationLevel") || null,

@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
 
   const result = await pool.query(
     `SELECT application_no, student_code, semester, program, section, campus,
-            major, faculty, prefix, full_name, status, admin_note, created_at
+            program_level, major, faculty, prefix, full_name, full_name_en, status, admin_note, created_at
      FROM applications WHERE national_id = $1`,
     [nationalId]
   );

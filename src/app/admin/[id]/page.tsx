@@ -14,6 +14,7 @@ import {
   EDUCATION_LEVEL_OPTIONS,
   STATUS_OPTIONS,
 } from "@/lib/formOptions";
+import { getLevels, getFaculties, getMajors } from "@/lib/courses";
 
 type Application = Record<string, unknown> & {
   id: number;
@@ -205,12 +206,39 @@ export default function AdminApplicationDetailPage({
             </select>
           </label>
           <label className={labelCls}>
-            <span className={captionCls}>สาขาวิชา</span>
-            <input className={inputCls} value={str("major")} onChange={(e) => set("major", e.target.value)} />
+            <span className={captionCls}>ระดับ</span>
+            <select
+              className={inputCls}
+              value={str("program_level")}
+              onChange={(e) => setApp((a) => (a ? { ...a, program_level: e.target.value, faculty: "", major: "" } : a))}
+            >
+              <option value="">-</option>
+              {getLevels().map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
           </label>
           <label className={labelCls}>
             <span className={captionCls}>คณะ</span>
-            <input className={inputCls} value={str("faculty")} onChange={(e) => set("faculty", e.target.value)} />
+            <select
+              className={inputCls}
+              value={str("faculty")}
+              disabled={!str("program_level")}
+              onChange={(e) => setApp((a) => (a ? { ...a, faculty: e.target.value, major: "" } : a))}
+            >
+              <option value="">-</option>
+              {getFaculties(str("program_level")).map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
+          </label>
+          <label className={labelCls + " sm:col-span-2"}>
+            <span className={captionCls}>สาขาวิชา</span>
+            <select
+              className={inputCls}
+              value={str("major")}
+              disabled={!str("faculty")}
+              onChange={(e) => set("major", e.target.value)}
+            >
+              <option value="">-</option>
+              {getMajors(str("program_level"), str("faculty")).map((o) => <option key={o} value={o}>{o}</option>)}
+            </select>
           </label>
           <label className={labelCls}>
             <span className={captionCls}>ประเภทการเข้าเรียน</span>
@@ -240,6 +268,10 @@ export default function AdminApplicationDetailPage({
           <label className={labelCls}>
             <span className={captionCls}>ชื่อ-นามสกุล</span>
             <input className={inputCls} value={str("full_name")} onChange={(e) => set("full_name", e.target.value)} />
+          </label>
+          <label className={labelCls}>
+            <span className={captionCls}>ชื่อ-นามสกุล (ภาษาอังกฤษ)</span>
+            <input className={inputCls} value={str("full_name_en")} onChange={(e) => set("full_name_en", e.target.value)} />
           </label>
           <label className={labelCls}>
             <span className={captionCls}>วันเดือนปีเกิด</span>

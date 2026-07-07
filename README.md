@@ -40,7 +40,7 @@ npm run start    # รันเซิร์ฟเวอร์ production (หล
 - `src/app/page.tsx` — หน้า PDPA
 - `src/app/apply/page.tsx` — ฟอร์มสมัคร, `src/app/apply/success` — หน้ายืนยัน
 - `src/app/status/page.tsx` — ตรวจสอบสถานะด้วยเลขบัตรประชาชน
-- `src/app/admin/**` — หน้าแอดมิน (ต้อง login), `src/middleware.ts` guard เส้นทางนี้
+- `src/app/admin/**` — หน้าแอดมิน (ต้อง login), `src/proxy.ts` guard เส้นทางนี้
 - `src/app/api/**` — API routes ทั้งหมด
 - `src/lib/db.ts` — PostgreSQL connection pool
 - `src/lib/session.ts` — JWT session cookie สำหรับแอดมิน
@@ -48,22 +48,30 @@ npm run start    # รันเซิร์ฟเวอร์ production (หล
 - `scripts/schema.sql` — DDL ของตาราง `applications`, `admin_users`
 - `scripts/seed-admin.mjs` — เพิ่ม/รีเซ็ตรหัสผ่านบัญชีแอดมิน
 
-## Deploy บน Ubuntu หลัง Nginx
+## Deploy บน Ubuntu หลัง Nginx (คุมด้วย PM2)
+
+เซิร์ฟเวอร์นี้รันทุกแอปผ่าน PM2 โดยใช้ ecosystem file ร่วมกันที่ `/var/www/ecosystem.config.js`
+พอร์ตที่ใช้สำหรับระบบนี้คือ **3400** (ตรวจสอบก่อนว่าไม่ชนกับแอปอื่นใน ecosystem.config.js)
 
 ดูตัวอย่างใน `deploy/`:
-- `deploy/nginx.conf.example` — reverse proxy ไปที่พอร์ต 3000 ของ `next start`
-- `deploy/app.service.example` — systemd unit ให้แอปรันค้างและ auto-restart
+- `deploy/nginx.conf.example` — reverse proxy ไปที่พอร์ต 3400 ของ `next start`
+- `deploy/ecosystem-snippet.example.js` — object ที่ต้องเพิ่มเข้าไปใน `apps` array ของ ecosystem.config.js
 
-ขั้นตอนคร่าวๆ บนเซิร์ฟเวอร์ Ubuntu:
+ขั้นตอนบนเซิร์ฟเวอร์ Ubuntu (path จริง: `/var/www/app/application_temp`):
 ```bash
-git clone <repo> /var/www/nbu-application
-cd /var/www/nbu-application
+cd /var/www/app/application_temp
 npm ci
-cp .env.example .env   # แก้ค่าให้ถูกต้อง
+cp .env.example .env   # แก้ค่าให้ถูกต้อง (host/user/password DB, SESSION_SECRET)
 npm run build
-sudo cp deploy/app.service.example /etc/systemd/system/nbu-application.service
-sudo systemctl daemon-reload && sudo systemctl enable --now nbu-application
-sudo cp deploy/nginx.conf.example /etc/nginx/sites-available/nbu-application
+
+# เพิ่ม object จาก deploy/ecosystem-snippet.example.js เข้าไปใน apps array ของ
+# /var/www/ecosystem.config.js ด้วยมือ แล้วรัน:
+cd /var/www
+pm2 start ecosystem.config.js --only nbu-application
+pm2 save
+
+# ตั้งค่า Nginx
+sudo cp /var/www/app/application_temp/deploy/nginx.conf.example /etc/nginx/sites-available/nbu-application
 sudo ln -s /etc/nginx/sites-available/nbu-application /etc/nginx/sites-enabled/
 sudo nginx -t && sudo systemctl reload nginx
 ```

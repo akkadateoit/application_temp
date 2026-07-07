@@ -5,12 +5,12 @@
 
 server {
     listen 80;
-    server_name apply.example.ac.th;   # <-- change to your real domain or server IP
+    server_name apply.northbkk.ac.th;
 
     client_max_body_size 15m;          # allow room for two ~5MB image uploads + form fields
 
     location / {
-        proxy_pass http://127.0.0.1:3000;
+        proxy_pass http://127.0.0.1:3400;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection "upgrade";
@@ -22,5 +22,5 @@ server {
 }
 
 # After confirming the site works over HTTP, obtain a TLS certificate, e.g.:
-#   sudo certbot --nginx -d apply.example.ac.th
+#   sudo certbot --nginx -d apply.northbkk.ac.th
 # certbot will rewrite this file to add a 443 server block automatically.

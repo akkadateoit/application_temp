@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS applications (
   program                VARCHAR(50),   -- 4 ปี / 2 ปี เทียบโอน
   section                VARCHAR(50),   -- ปกติ / สมทบ
   campus                 VARCHAR(50),   -- สะพานใหม่ / รังสิต / นนทบุรี
+  program_level          VARCHAR(100),  -- ระดับ จาก course.csv (ปริญญาตรี, ปริญญาโท, ...)
   major                  VARCHAR(200),
   faculty                VARCHAR(200),
   entry_type             VARCHAR(100),  -- ไม่มี/มีรายวิชาเทียบโอนต่างสถาบัน
@@ -52,6 +53,7 @@ CREATE TABLE IF NOT EXISTS applications (
   -- personal info
   prefix                   VARCHAR(20),  -- นาย/นาง/นางสาว
   full_name                VARCHAR(200) NOT NULL,
+  full_name_en             VARCHAR(200),
   birth_date               DATE,
   phone                    VARCHAR(20),
 
