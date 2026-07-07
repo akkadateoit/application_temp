@@ -22,6 +22,7 @@ import {
   getPlans,
   isValidFullCourseSelection,
 } from "@/lib/courses";
+import SearchSelect from "@/components/SearchSelect";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
 const ALLOWED_FILE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -128,11 +129,13 @@ export default function ApplyPage() {
     birthDate: "",
     phone: "",
     educationLevel: "",
+    educationLevelOther: "",
     schoolName: "",
     schoolProvince: "",
     dormNeeded: false,
     confirmAccurate: false,
   });
+  const [schoolNameManual, setSchoolNameManual] = useState(false);
 
   useEffect(() => {
     const hasPdpa = document.cookie
@@ -190,6 +193,27 @@ export default function ApplyPage() {
     setForm((f) => ({ ...f, curriculumType, studyPlan: "" }));
   }
 
+  function selectSchoolProvince(province: string) {
+    setForm((f) => ({ ...f, schoolProvince: province, schoolName: "" }));
+  }
+
+  async function fetchProvinceOptions(query: string): Promise<string[]> {
+    const res = await fetch(`/api/schools/provinces?q=${encodeURIComponent(query)}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.provinces ?? [];
+  }
+
+  async function fetchSchoolOptions(query: string): Promise<string[]> {
+    if (!form.schoolProvince) return [];
+    const res = await fetch(
+      `/api/schools?province=${encodeURIComponent(form.schoolProvince)}&q=${encodeURIComponent(query)}`
+    );
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.schools ?? [];
+  }
+
   function validateFile(file: File | undefined, label: string): string | null {
     if (!file) return `กรุณาแนบ${label}`;
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
@@ -236,7 +260,11 @@ export default function ApplyPage() {
       return;
     }
     if (!form.educationLevel) {
-      setError("กรุณาเลือกวุฒิการศึกษาสูงสุด");
+      setError("กรุณาเลือกวุฒิการศึกษาที่ใช้สมัคร");
+      return;
+    }
+    if (form.educationLevel === "อื่นๆ" && !form.educationLevelOther.trim()) {
+      setError("กรุณาระบุวุฒิการศึกษาที่ใช้สมัคร");
       return;
     }
     if (!form.paymentAmount || Number(form.paymentAmount) <= 0) {
@@ -291,7 +319,10 @@ export default function ApplyPage() {
       fd.append("fullNameEn", form.fullNameEn);
       fd.append("birthDate", form.birthDate);
       fd.append("phone", form.phone);
-      fd.append("educationLevel", form.educationLevel);
+      fd.append(
+        "educationLevel",
+        form.educationLevel === "อื่นๆ" ? form.educationLevelOther.trim() : form.educationLevel
+      );
       fd.append("schoolName", form.schoolName);
       fd.append("schoolProvince", form.schoolProvince);
       fd.append("dormNeeded", String(form.dormNeeded));
@@ -522,14 +553,58 @@ export default function ApplyPage() {
         </Section>
 
         <Section title="วุฒิการศึกษา / ที่พัก">
-          <Field label="วุฒิการศึกษาสูงสุด" full required>
+          <Field label="วุฒิการศึกษาที่ใช้สมัคร" full required>
             <RadioGroup name="educationLevel" options={EDUCATION_LEVEL_OPTIONS} value={form.educationLevel} onChange={(v) => update("educationLevel", v)} />
           </Field>
-          <Field label="โรงเรียน/วิทยาลัย">
-            <input className={inputCls} value={form.schoolName} onChange={(e) => update("schoolName", e.target.value)} />
+          {form.educationLevel === "อื่นๆ" && (
+            <Field label="ระบุวุฒิการศึกษา" full required>
+              <input
+                className={inputCls}
+                placeholder="ระบุวุฒิการศึกษาที่ใช้สมัคร"
+                value={form.educationLevelOther}
+                onChange={(e) => update("educationLevelOther", e.target.value)}
+              />
+            </Field>
+          )}
+          <Field label="จังหวัดที่ตั้งโรงเรียน/วิทยาลัย">
+            <SearchSelect
+              ariaLabel="จังหวัดที่ตั้งโรงเรียน/วิทยาลัย"
+              className={inputCls}
+              placeholder="พิมพ์เพื่อค้นหาจังหวัด"
+              value={form.schoolProvince}
+              onChange={selectSchoolProvince}
+              fetchOptions={fetchProvinceOptions}
+            />
           </Field>
-          <Field label="จังหวัด">
-            <input className={inputCls} value={form.schoolProvince} onChange={(e) => update("schoolProvince", e.target.value)} />
+          <Field label="โรงเรียน/วิทยาลัย">
+            {schoolNameManual ? (
+              <input
+                className={inputCls}
+                placeholder="พิมพ์ชื่อโรงเรียน/วิทยาลัย"
+                value={form.schoolName}
+                onChange={(e) => update("schoolName", e.target.value)}
+              />
+            ) : (
+              <SearchSelect
+                ariaLabel="โรงเรียน/วิทยาลัย"
+                className={inputCls}
+                placeholder={form.schoolProvince ? "พิมพ์เพื่อค้นหาโรงเรียน/วิทยาลัย" : "กรุณาเลือกจังหวัดก่อน"}
+                value={form.schoolName}
+                disabled={!form.schoolProvince}
+                onChange={(v) => update("schoolName", v)}
+                fetchOptions={fetchSchoolOptions}
+              />
+            )}
+            <button
+              type="button"
+              className="text-xs text-blue-600 hover:underline text-left mt-1"
+              onClick={() => {
+                setSchoolNameManual((m) => !m);
+                update("schoolName", "");
+              }}
+            >
+              {schoolNameManual ? "เลือกจากรายการแทน" : "ไม่พบโรงเรียนในรายการ / พิมพ์ชื่อเอง"}
+            </button>
           </Field>
           <Field label="ที่พักระหว่างการศึกษา" full>
             <div className="flex items-center gap-4">

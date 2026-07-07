@@ -21,6 +21,7 @@ import {
   getCurriculumTypes,
   getPlans,
 } from "@/lib/courses";
+import SearchSelect from "@/components/SearchSelect";
 
 type Application = Record<string, unknown> & {
   id: number;
@@ -52,6 +53,7 @@ export default function AdminApplicationDetailPage({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [schoolNameManual, setSchoolNameManual] = useState(false);
 
   useEffect(() => {
     fetch(`/api/admin/applications/${id}`)
@@ -62,6 +64,22 @@ export default function AdminApplicationDetailPage({
 
   function set(key: string, value: unknown) {
     setApp((a) => (a ? { ...a, [key]: value } : a));
+  }
+
+  async function fetchProvinceOptions(query: string): Promise<string[]> {
+    const res = await fetch(`/api/schools/provinces?q=${encodeURIComponent(query)}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.provinces ?? [];
+  }
+
+  async function fetchSchoolOptions(query: string): Promise<string[]> {
+    const province = (app?.school_province as string) ?? "";
+    if (!province) return [];
+    const res = await fetch(`/api/schools?province=${encodeURIComponent(province)}&q=${encodeURIComponent(query)}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data.schools ?? [];
   }
 
   async function handleSave() {
@@ -420,12 +438,46 @@ export default function AdminApplicationDetailPage({
             </select>
           </label>
           <label className={labelCls}>
-            <span className={captionCls}>โรงเรียน/วิทยาลัย</span>
-            <input className={inputCls} value={str("school_name")} onChange={(e) => set("school_name", e.target.value)} />
+            <span className={captionCls}>จังหวัดที่ตั้งโรงเรียน/วิทยาลัย</span>
+            <SearchSelect
+              ariaLabel="จังหวัดที่ตั้งโรงเรียน/วิทยาลัย"
+              className={inputCls}
+              placeholder="พิมพ์เพื่อค้นหาจังหวัด"
+              value={str("school_province")}
+              onChange={(v) => setApp((a) => (a ? { ...a, school_province: v, school_name: "" } : a))}
+              fetchOptions={fetchProvinceOptions}
+            />
           </label>
           <label className={labelCls}>
-            <span className={captionCls}>จังหวัด</span>
-            <input className={inputCls} value={str("school_province")} onChange={(e) => set("school_province", e.target.value)} />
+            <span className={captionCls}>โรงเรียน/วิทยาลัย</span>
+            {schoolNameManual ? (
+              <input
+                className={inputCls}
+                placeholder="พิมพ์ชื่อโรงเรียน/วิทยาลัย"
+                value={str("school_name")}
+                onChange={(e) => set("school_name", e.target.value)}
+              />
+            ) : (
+              <SearchSelect
+                ariaLabel="โรงเรียน/วิทยาลัย"
+                className={inputCls}
+                placeholder={str("school_province") ? "พิมพ์เพื่อค้นหาโรงเรียน/วิทยาลัย" : "กรุณาเลือกจังหวัดก่อน"}
+                value={str("school_name")}
+                disabled={!str("school_province")}
+                onChange={(v) => set("school_name", v)}
+                fetchOptions={fetchSchoolOptions}
+              />
+            )}
+            <button
+              type="button"
+              className="text-xs text-blue-600 hover:underline text-left mt-1"
+              onClick={() => {
+                setSchoolNameManual((m) => !m);
+                set("school_name", "");
+              }}
+            >
+              {schoolNameManual ? "เลือกจากรายการแทน" : "ไม่พบโรงเรียนในรายการ / พิมพ์ชื่อเอง"}
+            </button>
           </label>
           <label className="flex items-center gap-2 text-sm mt-6">
             <input
